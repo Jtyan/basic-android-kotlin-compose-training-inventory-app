@@ -7,7 +7,11 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-
+/*
+Room sees the interface, then generates a class at compile-time that implements it.
+You don’t need to write the implementation yourself — that’s the magic.
+If you made it a class, you'd have to implement every function manually (which defeats the purpose).
+ */
 @Dao
 interface ItemDao {
     /*
@@ -25,7 +29,7 @@ interface ItemDao {
     @Delete
     suspend fun delete(item: Item)
 
-
+    //Room automatically handles the query execution on a background thread when you return a Flow.
     @Query("SELECT * from items WHERE id = :id")
     fun getItem(id: Int): Flow<Item>
     /* It is recommended to use Flow in the persistence layer.

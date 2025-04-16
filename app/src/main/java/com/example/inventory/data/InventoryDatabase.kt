@@ -24,6 +24,11 @@ abstract class InventoryDatabase : RoomDatabase() {
         The value of a volatile variable is never cached, and all reads and writes are to and from the main memory.
         These features help ensure the value of Instance is always up to date and is the same for all execution threads
         */
+        /*
+        1) First call → Instance is null → Room builds the DB → Instance is updated ✅
+        2) Later calls → Instance is not null anymore → it returns the cached instance
+        Because building a Room database is expensive, and we don’t want to do it unless we need it.
+        */
         @Volatile
         private var Instance: InventoryDatabase? = null
 
@@ -36,11 +41,23 @@ abstract class InventoryDatabase : RoomDatabase() {
             block of code, which makes sure the database only gets initialized once.
             */
             return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, InventoryDatabase::class.java, "item_database")
+                Room.databaseBuilder(
+                    context.applicationContext, // Use context.applicationContext instead of context when you’re creating something that lives longer than an Activity, like a Room database. It's safer, prevents memory leaks, and is considered best practice.
+                    InventoryDatabase::class.java,
+                    "item_database")
                     .fallbackToDestructiveMigration(false)
                     .build()
-                    .also { Instance = it}
+                    .also { Instance = it } // stores the DB so future calls reuse it.
             }
+            /*
+            This is a thread-safe, lazy-loaded singleton function.
+
+            It checks:
+
+            If Instance already exists → return it ✅
+
+            If not → enter synchronized block to safely create the DB instance (only 1 thread at a time can go in here).
+             */
         }
     }
 }
